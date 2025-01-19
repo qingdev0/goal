@@ -18,11 +18,11 @@ get_current_tag() {
 # Display commits since the given tag
 show_commits_since_tag() {
     local tag=${1}
-    echo -e "\nCommits since tag ${tag}:"
+    printf "\nCommits since tag '%s':\n" "${tag}"
     if [[ ${tag} == "none" ]]; then
-        git log --oneline
+        git --no-pager log --oneline
     else
-        git log --oneline "${tag}..HEAD"
+        git --no-pager log --oneline "${tag}..HEAD"
     fi
 }
 

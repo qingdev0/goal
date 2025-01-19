@@ -20,19 +20,10 @@ update-pre-commithooks:
     fi
 
 commit:
-    #!/usr/bin/env bash
-    git status
-    if [[ -n "$(git diff)" ]]; then
-        echo "Warning: You have unstaged changes!"
-        read -p "Do you want to continue? [y/N] " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Commit cancelled"
-            exit 0
-        fi
-    fi
-    # Open the default editor for commit message
-    git commit -e
+    @./scripts/commit.sh ${@}
+
+lazy-commit:
+    @./scripts/commit.sh --lazy
 
 next-release:
     @./scripts/prepare_release.sh
