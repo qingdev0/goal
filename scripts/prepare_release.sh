@@ -71,6 +71,49 @@ create_tag() {
     fi
 }
 
+# Suggest next version based on conventional commits
+suggest_version() {
+    local current_tag=$1
+    local major_bump=false
+    local minor_bump=false
+    local patch_bump=false
+
+    # Default to v0.1.0 if no current tag
+    if [[ ${current_tag} == "none" ]]; then
+        echo "v0.1.0"
+        return
+    fi
+
+    # Analyze commits since last tag
+    while IFS= read -r commit; do
+        commit_msg=$(echo "${commit}" | sed -E 's/^[0-9a-f]{7}[[:space:]]+//')
+        if [[ ${commit_msg} =~ ^.*!:.*|.*BREAKING.*CHANGE.* ]]; then
+            major_bump=true
+        elif [[ ${commit_msg} =~ ^feat: ]]; then
+            minor_bump=true
+        else
+            patch_bump=true
+        fi
+    done < <(git log --oneline "${current_tag}..HEAD")
+
+    # Extract current version numbers
+    local version=${current_tag#v}
+    local major minor patch
+    IFS='.' read -r major minor patch <<< "${version}"
+
+    # Calculate new version
+    if [[ ${major_bump} == true ]]; then
+        echo "v$((major + 1)).0.0"
+    elif [[ ${minor_bump} == true ]]; then
+        echo "v${major}.$((minor + 1)).0"
+    elif [[ ${patch_bump} == true ]]; then
+        echo "v${major}.${minor}.$((patch + 1))"
+    else
+        # No changes detected, suggest current version
+        echo "${current_tag}"
+    fi
+}
+
 #######################
 # Main execution flow #
 #######################
@@ -79,13 +122,14 @@ main() {
     current_tag=$(get_current_tag)
     echo "Current tag: ${current_tag}"
 
-    # Show commit history
+    # Show commit history and suggest version
     show_commits_since_tag "${current_tag}"
-
-    # Prompt for new tag
+    suggested_tag=$(suggest_version "${current_tag}")
     echo -e "\nCurrent tag is ${current_tag}"
-    echo -n "Enter new tag (e.g., v0.1.3): "
+    echo -e "Suggested tag is ${suggested_tag} (based on conventional commits)"
+    echo -n "Enter new tag [default: ${suggested_tag}]: "
     read -r new_tag
+    new_tag=${new_tag:-${suggested_tag}}
 
     # Validate tag format and version
     if validate_tag_format "${new_tag}" && validate_tag_version "${current_tag}" "${new_tag}"; then
