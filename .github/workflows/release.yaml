@@ -12,7 +12,13 @@ jobs:
   release:
     name: Release pushed tag
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed for generate-notes to work properly
+
       - name: Create release
         env:
           tag: ${{ github.ref_name }}
