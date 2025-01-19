@@ -16,3 +16,6 @@ commit:
 run:
     go mod tidy
     go run cmd/helloworld/main.go
+
+next-release:
+    @./scripts/prepare_release.sh
